@@ -26,7 +26,8 @@ export const SecurityDashboard: React.FC<SecurityDashboardProps> = ({
           </h1>
           <p className="uppercase text-xs">
             VERSION {server.version} • LAST SCAN:{' '}
-            {new Date(run.finishedAt || run.startedAt).toLocaleString()}
+            {new Date(data.metadata.generatedAt).toISOString().replace('T', ' ').slice(0, 19)}
+
           </p>
         </div>
         <div className="mt-2 md:mt-0 flex space-x-2">
