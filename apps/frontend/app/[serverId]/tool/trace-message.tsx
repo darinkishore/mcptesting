@@ -28,7 +28,7 @@ export function TraceMessage({ trace }: TraceMessageProps) {
           <div className="flex items-center justify-between mb-1">
             <span className="text-sm font-medium capitalize">{trace.type}</span>
             <span className="text-xs text-gray-500">
-              {new Date(trace.timestamp).toLocaleTimeString()}
+              {new Date(trace.timestamp).toISOString().slice(11, 19)}
             </span>
           </div>
           <pre className="text-xs bg-white bg-opacity-50 p-2 rounded overflow-x-auto">

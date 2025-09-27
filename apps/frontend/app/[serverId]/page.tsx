@@ -79,7 +79,7 @@ export default async function ServerOverviewPage({ params }: ServerPageProps) {
           <div>
             <dt className="text-sm font-medium text-gray-500">Last Tested</dt>
             <dd className="mt-1 text-sm text-gray-900">
-              {new Date(server.lastTested).toLocaleString()}
+              {new Date(server.lastTested).toISOString().replace('T', ' ').slice(0, 19)}
             </dd>
           </div>
           <div>

@@ -78,7 +78,7 @@ export function LeaderboardTable({ servers }: LeaderboardTableProps) {
                 </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {new Date(server.lastTested).toLocaleDateString()}
+                {new Date(server.lastTested).toISOString().split('T')[0]}
               </td>
             </tr>
           ))}
