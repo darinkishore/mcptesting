@@ -9,51 +9,33 @@ import {
   AlertTriangle,
   AlertCircle,
 } from 'lucide-react'
+import { SecurityLint } from '../../types'
 import { DropdownFilter } from './dropdown-filter'
-
-interface CheckData {
-  id: string
-  label: string
-  category: string
-  severity: string
-  weight: number
-  satisfied: boolean
-  scoreContribution: number
-  provider: string
-}
-
-interface CheckEvidence {
-  type: string
-  [key: string]: unknown
-}
-
-interface CheckDetail {
-  name: string
-  source: string
-  category: string
-  severity: string
-  weight: number
-  satisfied: boolean
-  scoreContribution: number
-  evidence: CheckEvidence
-}
+import { EvidenceRenderer } from './evidence-renderer'
+import { JsonBlock } from './json-block'
 
 interface ChecksTableProps {
-  checks: CheckData[]
-  checkDetails: Record<string, CheckDetail>
+  securityLint: SecurityLint
 }
 
 export const ChecksTable: React.FC<ChecksTableProps> = ({
-  checks,
-  checkDetails,
+  securityLint,
 }) => {
   const [expandedCheck, setExpandedCheck] = useState<string | null>(null)
+  const [showRawEvidence, setShowRawEvidence] = useState<Record<string, boolean>>({})
   const [filterSeverity, setFilterSeverity] = useState<string>('')
   const [filterStatus, setFilterStatus] = useState<string>('')
   const [filterProvider, setFilterProvider] = useState<string>('')
 
   const toggleExpand = (id: string) => {
     setExpandedCheck(expandedCheck === id ? null : id)
+  }
+
+  const toggleRawEvidence = (id: string) => {
+    setShowRawEvidence(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }))
   }
 
   const getSeverityIcon = (severity: string) => {
@@ -86,7 +68,19 @@ export const ChecksTable: React.FC<ChecksTableProps> = ({
     }
   }
 
-  const filteredChecks = checks.filter((check) => {
+  // Use vizDataset if available, otherwise generate from checks
+  const checksToDisplay = securityLint.vizDataset || Object.values(securityLint.checks).map(check => ({
+    id: check.id,
+    label: check.name,
+    category: check.category,
+    severity: check.severity,
+    weight: check.weight,
+    satisfied: check.satisfied,
+    scoreContribution: check.scoreContribution,
+    provider: check.source
+  }))
+
+  const filteredChecks = checksToDisplay.filter((check) => {
     if (
       filterSeverity &&
       check.severity.toLowerCase() !== filterSeverity.toLowerCase()
@@ -97,16 +91,6 @@ export const ChecksTable: React.FC<ChecksTableProps> = ({
     if (filterProvider && check.provider !== filterProvider) return false
     return true
   })
-
-  const renderEvidence = (evidence: CheckEvidence) => {
-    return (
-      <div className="bg-gray-100 border-2 border-black p-2 mt-2 overflow-x-auto">
-        <pre className="text-xs whitespace-pre-wrap font-mono">
-          {JSON.stringify(evidence, null, 2)}
-        </pre>
-      </div>
-    )
-  }
 
   return (
     <div className="neo-component p-4 mt-4">
@@ -194,102 +178,137 @@ export const ChecksTable: React.FC<ChecksTableProps> = ({
             </tr>
           </thead>
           <tbody>
-            {filteredChecks.map((check) => (
-              <Fragment key={check.id}>
-                <tr
-                  onClick={() => toggleExpand(check.id)}
-                  className={`cursor-pointer hover:bg-gray-50 ${expandedCheck === check.id ? 'bg-gray-50' : ''}`}
-                >
-                  <td>
-                    <div className="flex items-center">
-                      {check.satisfied ? (
-                        <CheckCircle className="h-5 w-5 neo-success mr-1" />
-                      ) : (
-                        <XCircle className="h-5 w-5 neo-danger mr-1" />
-                      )}
-                      <span className="font-medium text-xs uppercase">
-                        {check.label}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="text-xs uppercase">{check.category}</td>
-                  <td>
-                    <span
-                      className={`px-1 inline-flex text-xs leading-5 font-bold ${getSeverityClass(check.severity)}`}
-                    >
-                      {check.severity.toUpperCase()}
-                    </span>
-                  </td>
-                  <td>
-                    <span
-                      className={`px-1 inline-flex text-xs leading-5 font-bold ${check.satisfied ? 'bg-black neo-success' : 'bg-black neo-danger'}`}
-                    >
-                      {check.satisfied ? 'PASS' : 'FAIL'}
-                    </span>
-                  </td>
-                  <td className="text-xs uppercase">{check.provider}</td>
-                  <td>
-                    <span className="font-bold text-xs">
-                      {check.scoreContribution}
-                    </span>
-                    <span className="text-xs">/{check.weight}</span>
-                  </td>
-                  <td className="text-center">
-                    {expandedCheck === check.id ? (
-                      <ChevronUp className="h-4 w-4 inline-block" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 inline-block" />
-                    )}
-                  </td>
-                </tr>
-                {expandedCheck === check.id && (
-                  <tr>
-                    <td colSpan={7} className="bg-gray-100">
-                      <div className="p-2">
-                        <h4 className="text-md font-bold uppercase mb-2">
-                          {checkDetails[check.id].name}
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                          <div>
-                            <span className="text-xs uppercase block">
-                              Source
-                            </span>
-                            <span className="text-xs">
-                              {checkDetails[check.id].source}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-xs uppercase block">
-                              Category
-                            </span>
-                            <span className="text-xs">
-                              {checkDetails[check.id].category}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-xs uppercase block">
-                              Severity
-                            </span>
-                            <div className="flex items-center">
-                              {getSeverityIcon(checkDetails[check.id].severity)}
-                              <span className="ml-1 text-xs">
-                                {checkDetails[check.id].severity}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="mt-3">
-                          <h5 className="text-sm font-bold uppercase mb-1">
-                            Evidence
-                          </h5>
-                          {renderEvidence(checkDetails[check.id].evidence)}
-                        </div>
+            {filteredChecks.map((check) => {
+              const checkDetail = securityLint.checks[check.id]
+              return (
+                <Fragment key={check.id}>
+                  <tr
+                    onClick={() => toggleExpand(check.id)}
+                    className={`cursor-pointer hover:bg-gray-50 ${expandedCheck === check.id ? 'bg-gray-50' : ''}`}
+                  >
+                    <td>
+                      <div className="flex items-center">
+                        {check.satisfied ? (
+                          <CheckCircle className="h-5 w-5 neo-success mr-1" />
+                        ) : (
+                          <XCircle className="h-5 w-5 neo-danger mr-1" />
+                        )}
+                        <span className="font-medium text-xs uppercase">
+                          {check.label}
+                        </span>
                       </div>
                     </td>
+                    <td className="text-xs uppercase">{check.category}</td>
+                    <td>
+                      <span
+                        className={`px-1 inline-flex text-xs leading-5 font-bold ${getSeverityClass(check.severity)}`}
+                      >
+                        {check.severity.toUpperCase()}
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        className={`px-1 inline-flex text-xs leading-5 font-bold ${check.satisfied ? 'bg-black neo-success' : 'bg-black neo-danger'}`}
+                      >
+                        {check.satisfied ? 'PASS' : 'FAIL'}
+                      </span>
+                    </td>
+                    <td className="text-xs uppercase">{check.provider}</td>
+                    <td>
+                      <span className="font-bold text-xs">
+                        {check.scoreContribution}
+                      </span>
+                      <span className="text-xs">/{check.weight}</span>
+                    </td>
+                    <td className="text-center">
+                      {expandedCheck === check.id ? (
+                        <ChevronUp className="h-4 w-4 inline-block" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 inline-block" />
+                      )}
+                    </td>
                   </tr>
-                )}
-              </Fragment>
-            ))}
+                  {expandedCheck === check.id && checkDetail && (
+                    <tr>
+                      <td colSpan={7} className="bg-gray-50 p-4">
+                        <div>
+                          <h4 className="text-md font-bold uppercase mb-3 border-b-2 border-black pb-2">
+                            {checkDetail.name}
+                          </h4>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-xs">
+                            <div>
+                              <span className="text-xs uppercase font-bold block mb-1">
+                                Source
+                              </span>
+                              <span className="font-mono bg-gray-100 px-1">
+                                {checkDetail.source}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-xs uppercase font-bold block mb-1">
+                                Category
+                              </span>
+                              <span className="font-mono bg-gray-100 px-1">
+                                {checkDetail.category}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-xs uppercase font-bold block mb-1">
+                                Severity
+                              </span>
+                              <div className="flex items-center">
+                                {getSeverityIcon(checkDetail.severity)}
+                                <span className="ml-1 font-mono bg-gray-100 px-1">
+                                  {checkDetail.severity}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-4">
+                            <h5 className="text-sm font-bold uppercase mb-2 border-b-2 border-black pb-1">
+                              Evidence
+                            </h5>
+                            <EvidenceRenderer evidence={checkDetail.evidence} />
+                          </div>
+
+                          <div className="mt-4 pt-3 border-t-2 border-gray-300">
+                            <button
+                              onClick={() => toggleRawEvidence(check.id)}
+                              className="px-3 py-1 text-xs bg-white border-2 border-black hover:bg-gray-100 font-mono uppercase"
+                            >
+                              {showRawEvidence[check.id] ? 'Hide raw evidence' : 'Show raw evidence'}
+                            </button>
+                            {showRawEvidence[check.id] && (
+                              <div className="mt-3">
+                                <JsonBlock
+                                  data={checkDetail.evidence}
+                                  filename={`${check.id}-evidence.json`}
+                                />
+                                {checkDetail.raw ? (
+                                  <details className="mt-3">
+                                    <summary className="text-xs font-bold uppercase cursor-pointer">
+                                      Original tool blob
+                                    </summary>
+                                    <div className="mt-2">
+                                      <JsonBlock
+                                        data={checkDetail.raw}
+                                        filename={`${check.id}-raw.json`}
+                                      />
+                                    </div>
+                                  </details>
+                                ) : null}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              )
+            })}
           </tbody>
         </table>
       </div>
