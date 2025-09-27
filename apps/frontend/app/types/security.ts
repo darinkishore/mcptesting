@@ -58,6 +58,13 @@ export type Evidence =
       detected?: boolean;
       topExample?: string;
       raw?: unknown;
+    }
+  | {
+      type: "scanReport";
+      issue: string;                 // E001, E002, etc.
+      summary?: { toolsAnalyzed?: number; issuesFound?: number; [k: string]: unknown };
+      reportPath?: string;           // scan/mcp-scan.json
+      raw?: unknown;
     };
 
 /** One security check (maps to a card in your Security tab) */
