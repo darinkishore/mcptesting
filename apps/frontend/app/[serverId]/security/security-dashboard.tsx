@@ -25,9 +25,11 @@ export const SecurityDashboard: React.FC<SecurityDashboardProps> = ({
             {server.name} SECURITY ASSESSMENT
           </h1>
           <p className="uppercase text-xs">
-            VERSION {server.version} • LAST SCAN:{' '}
-            {new Date(data.metadata.generatedAt).toISOString().replace('T', ' ').slice(0, 19)}
-
+            VERSION {server.version} • LAST SCAN:{" "}
+            {new Date(run.finishedAt || run.startedAt)
+              .toISOString()
+              .replace("T", " ")
+              .slice(0, 19)}
           </p>
         </div>
         <div className="mt-2 md:mt-0 flex space-x-2">
@@ -56,5 +58,5 @@ export const SecurityDashboard: React.FC<SecurityDashboardProps> = ({
 
       <ChecksTable securityLint={securityLint} />
     </div>
-  )
+  );
 }
