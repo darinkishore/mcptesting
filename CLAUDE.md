@@ -112,6 +112,157 @@ uv run --directory apps/backend python -c "from <module> import <item>"
 uv sync  # This will validate all workspace configurations
 ```
 
+## Frontend Architecture Principles
+
+### Design System: Neo-Brutalist
+**CRITICAL**: This codebase uses neo-brutalist design principles throughout the frontend.
+
+#### Design Specifications
+- **Neo-brutalist design**: Stark black borders, raw concrete textures
+- **Grid systems**: Exposed grid systems with visible boundaries
+- **Layouts**: Asymmetric layouts with aggressive positioning
+- **Typography**: Bold monospace typography (JetBrains Mono)
+- **Color scheme**: High contrast monochrome with single accent colors
+  - Electric blue (#00f0ff) for success states
+  - Danger red (#ff2d20) for error states
+- **Visual style**:
+  - Thick outlines (3px borders)
+  - No rounded corners (all sharp edges)
+  - Anti-aliased elements
+  - Raw HTML aesthetic
+  - Visible component boundaries
+  - Aggressive shadows (8px solid black)
+
+#### CSS Classes
+The following neo-brutalist classes are available globally:
+- `.neo-component` - Standard brutalist component container
+- `.neo-grid` - Grid with visible guidelines
+- `.neo-table` - Brutalist table styling
+- `.neo-success` / `.neo-success-bg` - Electric blue accent
+- `.neo-danger` / `.neo-danger-bg` - Danger red accent
+
+### Locality of Reasoning
+**CRITICAL**: This codebase prioritizes locality of reasoning and straightforwardness. Components live where they're used, not in global folders.
+
+#### Co-location Rules
+1. **Keep components next to where they're used**
+   - NO global `/components` folder
+   - Components used by one page live in that page's directory
+   - Components truly shared across routes go at lowest common parent
+
+2. **File Organization Example**
+```
+app/
+├── page.tsx                          # Main page
+├── leaderboard-table.tsx             # Only used by page.tsx - lives here
+├── score-cell.tsx                    # Shared by leaderboard - at app level
+├── mcp-types.ts                      # Types used across routes - at app level
+├── [serverId]/
+│   ├── page.tsx                      # Server overview page
+│   ├── server-header.tsx             # Shared across all server tabs
+│   ├── tab-nav.tsx                   # Tab navigation for server pages
+│   ├── tool/
+│   │   ├── page.tsx                  # Tool evaluation page
+│   │   ├── task-list.tsx             # ONLY for tool tab - lives here
+│   │   ├── task-trace-viewer.tsx     # ONLY for tool tab - lives here
+│   │   └── trace-message.tsx         # ONLY for tool tab - lives here
+│   └── security/
+│       ├── page.tsx                  # Security analysis page
+│       ├── security-checks.tsx       # ONLY for security tab - lives here
+│       └── check-evidence.tsx        # ONLY for security tab - lives here
+```
+
+3. **When to Share Components**
+   - **Small components (< 30 lines)**: Just duplicate them
+   - **Larger shared components**: Put at lowest common parent directory
+   - **Never hunt for components**: Everything for a feature stays together
+
+#### Benefits of This Approach
+- When debugging tool evaluation, everything is in `[serverId]/tool/`
+- No jumping between `/components`, `/lib`, `/utils` directories
+- Each route is self-contained with its specific logic
+- New developers can understand a feature by looking in one place
+
+### Server Components by Default
+- All page.tsx files are Server Components
+- Fetch data directly in components, no separate data layer
+- Only add 'use client' when you need interactivity (onClick, useState, etc.)
+- This keeps most rendering on the server, improving performance
+
+### Routes as Feature Boundaries
+- Each route represents a complete feature
+- Tab navigation uses routes (`/server-123`, `/server-123/tool`, `/server-123/security`)
+- This gives you free browser history and shareable URLs
+- Each route folder contains ALL code for that feature
+
+### Type Safety
+- Types that are truly shared go in `app/mcp-types.ts`
+- Route-specific types stay in that route's folder
+- Always define interfaces for component props
+
+## Type System Architecture
+
+### Comprehensive Domain Types
+**CRITICAL**: The MCP Testing Leaderboard uses a comprehensive type system located in `app/types/`. This is the single source of truth for all domain models.
+
+#### Organization
+```
+app/types/
+├── index.ts           # Re-exports everything for convenience
+├── core.ts            # Branded IDs, enums, ServerMeta, EvaluationRun
+├── leaderboard.ts     # LeaderboardRow, queries, sorting
+├── tool-evaluation.ts # Tasks, traces, ChatCompletion types
+├── security.ts        # SecurityCheck, Evidence union, SecurityLint
+├── server-detail.ts   # ServerDetail, Overview, tabs data
+└── api.ts             # API response shapes
+```
+
+#### Key Features
+
+**1. Branded Types for Type Safety**
+```typescript
+// Prevents mixing up different ID types
+type ServerId = string & { readonly __brand: "ServerId" };
+type TaskId = string & { readonly __brand: "TaskId" };
+```
+
+**2. Discriminated Unions for Evidence**
+```typescript
+type Evidence =
+  | { type: "httpTrace"; request: ...; response: ... }
+  | { type: "validatorAssertion"; testId: ...; ... }
+  | { type: "scanIssue"; code: ...; entity: ... }
+  // ... more types
+```
+
+**3. Comprehensive Chat Trace Model**
+- Full OpenAI-style chat completion traces
+- Token usage tracking
+- Tool call metadata
+- Success/failure with expected values
+
+**4. Reproducibility with EvaluationRun**
+- Tracks exact tool versions
+- Captures environment details
+- Links to specific commits and datasets
+
+#### Import Usage
+```typescript
+// Import everything you need from the index
+import { ServerId, LeaderboardRow, SecurityCheck } from '@/types';
+
+// Or import from specific domain files
+import { Evidence } from '@/types/security';
+import { ChatCompletionTrace } from '@/types/tool-evaluation';
+```
+
+#### Type Guidelines
+1. **Always use branded types** for IDs to prevent mix-ups
+2. **Use discriminated unions** for evidence and other variants
+3. **Keep raw data** in optional `raw` fields for debugging
+4. **Track provenance** with RunId and version info
+5. **Prefer interfaces over types** for object shapes (better error messages)
+
 ## Frontend-Backend Integration
 
 - Backend CORS is configured for `http://localhost:3000`
