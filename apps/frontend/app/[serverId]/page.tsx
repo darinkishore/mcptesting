@@ -1,4 +1,5 @@
 import { MCPServer } from '../mcp-types';
+import { OverviewCards } from './overview-cards';
 
 // Mock data - replace with actual API calls
 async function getServer(serverId: string): Promise<MCPServer> {
@@ -24,50 +25,34 @@ export default async function ServerOverviewPage({ params }: ServerPageProps) {
   const { serverId } = await params;
   const server = await getServer(serverId);
 
+  // Mock security check data - replace with actual API call
+  const totalSecurityChecks = 12;
+  const passedSecurityChecks = Math.round((server.securityScore / 100) * totalSecurityChecks);
+
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-2xl font-semibold mb-4">Overview</h2>
+    <div className="space-y-0">
+      <OverviewCards
+        securityScore={server.securityScore}
+        passedChecks={passedSecurityChecks}
+        totalChecks={totalSecurityChecks}
+      />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="border rounded-lg p-4">
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Total Score</h3>
-            <p className="text-3xl font-bold text-gray-900">{server.totalScore}%</p>
-            <p className="text-sm text-gray-500 mt-1">
-              {server.status === 'passing' ? '✓ Passing' : '✗ Failing'}
-            </p>
-          </div>
-
-          <div className="border rounded-lg p-4">
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Tool Functionality</h3>
-            <p className="text-3xl font-bold text-gray-900">{server.toolScore}%</p>
-            <p className="text-sm text-gray-500 mt-1">Core capabilities</p>
-          </div>
-
-          <div className="border rounded-lg p-4">
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Security</h3>
-            <p className="text-3xl font-bold text-gray-900">{server.securityScore}%</p>
-            <p className="text-sm text-gray-500 mt-1">Security compliance</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h3 className="text-lg font-semibold mb-3">Server Information</h3>
+      <div className="neo-component p-4 mt-4">
+        <h3 className="text-lg font-bold mb-3 uppercase">SERVER INFORMATION</h3>
         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <dt className="text-sm font-medium text-gray-500">Description</dt>
+            <dt className="text-sm font-bold uppercase text-gray-500">Description</dt>
             <dd className="mt-1 text-sm text-gray-900">{server.description}</dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Repository</dt>
+            <dt className="text-sm font-bold uppercase text-gray-500">Repository</dt>
             <dd className="mt-1 text-sm text-gray-900">
               {server.repository ? (
                 <a
                   href={server.repository}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800"
+                  className="neo-success hover:underline"
                 >
                   {server.repository.replace('https://github.com/', '')}
                 </a>
@@ -77,24 +62,24 @@ export default async function ServerOverviewPage({ params }: ServerPageProps) {
             </dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Last Tested</dt>
+            <dt className="text-sm font-bold uppercase text-gray-500">Last Tested</dt>
             <dd className="mt-1 text-sm text-gray-900">
               {new Date(server.lastTested).toISOString().replace('T', ' ').slice(0, 19)}
             </dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Status</dt>
+            <dt className="text-sm font-bold uppercase text-gray-500">Status</dt>
             <dd className="mt-1">
               <span
-                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                className={`px-2 py-1 text-xs font-bold border-2 border-black ${
                   server.status === 'passing'
-                    ? 'bg-green-100 text-green-800'
+                    ? 'neo-success-bg text-white'
                     : server.status === 'failing'
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-yellow-100 text-yellow-800'
+                    ? 'neo-danger-bg text-white'
+                    : 'bg-yellow-500 text-white'
                 }`}
               >
-                {server.status}
+                {server.status.toUpperCase()}
               </span>
             </dd>
           </div>
