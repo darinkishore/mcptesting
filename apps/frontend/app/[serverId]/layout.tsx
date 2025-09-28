@@ -2,21 +2,23 @@ import Link from 'next/link';
 import { MCPServer } from '../mcp-types';
 import { ServerHeader } from './server-header';
 import { TabNav } from './tab-nav';
+import { dataLoader } from '../../lib/data-loader';
+import { notFound } from 'next/navigation';
 
-// Mock data - replace with actual API call
+// Dynamic data loading from JSON files
 async function getServer(serverId: string): Promise<MCPServer> {
-  // This would be: const res = await fetch(`${API_BASE_URL}/api/servers/${serverId}`);
-  return {
-    id: serverId,
-    name: 'MCP Filesystem',
-    description: 'File system operations server',
-    repository: 'https://github.com/modelcontextprotocol/servers',
-    totalScore: 95,
-    toolScore: 98,
-    securityScore: 92,
-    lastTested: '2024-01-15T10:30:00Z',
-    status: 'passing'
-  };
+  try {
+    const data = await dataLoader.getServerData(serverId);
+
+    if (!data) {
+      notFound();
+    }
+
+    return data.server;
+  } catch (error) {
+    console.error(`Error loading server ${serverId}:`, error);
+    notFound();
+  }
 }
 
 interface ServerLayoutProps {

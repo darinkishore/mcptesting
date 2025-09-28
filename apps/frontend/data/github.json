@@ -1,0 +1,259 @@
+{
+  "server": {
+    "id": "github",
+    "name": "MCP GitHub",
+    "description": "GitHub API integration server for repository management and issue tracking",
+    "version": "2.0.1",
+    "repository": "https://github.com/modelcontextprotocol/servers",
+    "totalScore": 83,
+    "toolScore": 75,
+    "securityScore": 82,
+    "lastTested": "2024-01-15T09:15:00Z",
+    "status": "passing"
+  },
+  "toolEvaluation": {
+    "taskEvaluations": [
+      {
+        "id": "api-authentication",
+        "name": "GitHub API Authentication",
+        "description": "Secure authentication with GitHub API using tokens and OAuth",
+        "score": "HIGH",
+        "explanation": "Robust authentication implementation with proper token management and refresh mechanisms",
+        "icon": "Key"
+      },
+      {
+        "id": "repository-operations",
+        "name": "Repository Management",
+        "description": "CRUD operations on repositories including creation, reading, and management",
+        "score": "CRIT",
+        "explanation": "Excellent repository management capabilities with comprehensive API coverage",
+        "icon": "GitBranch"
+      },
+      {
+        "id": "issue-tracking",
+        "name": "Issue & PR Management",
+        "description": "Creating, updating, and managing GitHub issues and pull requests",
+        "score": "HIGH",
+        "explanation": "Strong issue management with good integration for pull request workflows",
+        "icon": "GitPullRequest"
+      },
+      {
+        "id": "webhook-handling",
+        "name": "Webhook Processing",
+        "description": "Processing GitHub webhooks for real-time event handling",
+        "score": "MED",
+        "explanation": "Basic webhook support with room for improvement in event filtering and error handling",
+        "icon": "Webhook"
+      },
+      {
+        "id": "rate-limit-management",
+        "name": "API Rate Limit Handling",
+        "description": "Managing GitHub API rate limits and implementing backoff strategies",
+        "score": "LOW",
+        "explanation": "Limited rate limiting strategy, needs improvement for high-volume operations",
+        "icon": "Clock"
+      }
+    ]
+  },
+  "securityAnalysis": {
+    "score": 82,
+    "passedChecks": 8,
+    "totalChecks": 10,
+    "checks": {
+      "VAL-ORIGIN-VALIDATION": {
+        "id": "VAL-ORIGIN-VALIDATION",
+        "name": "Origin Validation",
+        "source": "mcp-validator",
+        "category": "transport",
+        "severity": "critical",
+        "weight": 10,
+        "satisfied": true,
+        "scoreContribution": 10,
+        "evidence": {
+          "type": "validatorAssertion",
+          "testId": "origin-validation",
+          "expected": "valid-github-origin",
+          "actual": "valid-github-origin",
+          "satisfied": true
+        }
+      },
+      "VAL-BEARER-TOKEN": {
+        "id": "VAL-BEARER-TOKEN",
+        "name": "Bearer Token",
+        "source": "mcp-validator",
+        "category": "authz",
+        "severity": "critical",
+        "weight": 10,
+        "satisfied": true,
+        "scoreContribution": 10,
+        "evidence": {
+          "type": "validatorAssertion",
+          "testId": "bearer-token",
+          "expected": "valid-github-token",
+          "actual": "valid-github-token",
+          "satisfied": true
+        }
+      },
+      "VAL-SCOPE-ENFORCEMENT": {
+        "id": "VAL-SCOPE-ENFORCEMENT",
+        "name": "Scope Enforcement",
+        "source": "mcp-validator",
+        "category": "authz",
+        "severity": "critical",
+        "weight": 10,
+        "satisfied": true,
+        "scoreContribution": 10,
+        "evidence": {
+          "type": "validatorAssertion",
+          "testId": "scope-enforcement",
+          "expected": "repo-read-only",
+          "actual": "repo-read-only",
+          "satisfied": true
+        }
+      },
+      "VAL-NO-BATCHING": {
+        "id": "VAL-NO-BATCHING",
+        "name": "No Batching",
+        "source": "mcp-validator",
+        "category": "protocol",
+        "severity": "medium",
+        "weight": 6,
+        "satisfied": false,
+        "scoreContribution": 0,
+        "evidence": {
+          "type": "validatorAssertion",
+          "testId": "no-batching",
+          "expected": "single-request-only",
+          "actual": "batch-requests-enabled",
+          "satisfied": false
+        }
+      },
+      "VAL-SCHEMA-ENFORCED": {
+        "id": "VAL-SCHEMA-ENFORCED",
+        "name": "Schema Enforced",
+        "source": "mcp-validator",
+        "category": "protocol",
+        "severity": "high",
+        "weight": 8,
+        "satisfied": true,
+        "scoreContribution": 8,
+        "evidence": {
+          "type": "validatorAssertion",
+          "testId": "schema-enforcement",
+          "expected": "strict-github-api-schema",
+          "actual": "strict-github-api-schema",
+          "satisfied": true
+        }
+      },
+      "SCAN-PROMPT-INJECTION": {
+        "id": "SCAN-PROMPT-INJECTION",
+        "name": "Prompt Injection",
+        "source": "mcp-scan",
+        "category": "tools",
+        "severity": "high",
+        "weight": 8,
+        "satisfied": true,
+        "scoreContribution": 8,
+        "evidence": {
+          "type": "scanIssue",
+          "code": "PI001",
+          "entity": "github-api-tools",
+          "severity": "info",
+          "message": "No prompt injection vulnerabilities detected in GitHub API operations"
+        }
+      },
+      "SCAN-INTEGRITY-PINNING": {
+        "id": "SCAN-INTEGRITY-PINNING",
+        "name": "Integrity Pinning",
+        "source": "mcp-scan",
+        "category": "supply_chain",
+        "severity": "medium",
+        "weight": 6,
+        "satisfied": true,
+        "scoreContribution": 6,
+        "evidence": {
+          "type": "scanIssue",
+          "code": "IP001",
+          "entity": "github-dependencies",
+          "severity": "info",
+          "message": "Subresource integrity pinning implemented for GitHub API client"
+        }
+      },
+      "SCAN-PII-LEAK": {
+        "id": "SCAN-PII-LEAK",
+        "name": "PII Leak",
+        "source": "mcp-scan",
+        "category": "runtime",
+        "severity": "high",
+        "weight": 8,
+        "satisfied": false,
+        "scoreContribution": 0,
+        "evidence": {
+          "type": "scanIssue",
+          "code": "PII001",
+          "entity": "user-data-processing",
+          "severity": "high",
+          "message": "Potential PII exposure in user profile data processing and logging"
+        }
+      },
+      "SCAN-SECRETS-LEAK": {
+        "id": "SCAN-SECRETS-LEAK",
+        "name": "Secrets Leak",
+        "source": "mcp-scan",
+        "category": "runtime",
+        "severity": "critical",
+        "weight": 10,
+        "satisfied": true,
+        "scoreContribution": 10,
+        "evidence": {
+          "type": "scanIssue",
+          "code": "SL001",
+          "entity": "github-token-handling",
+          "severity": "info",
+          "message": "GitHub tokens properly encrypted and not exposed in logs"
+        }
+      },
+      "SCAN-TOXIC-FLOW": {
+        "id": "SCAN-TOXIC-FLOW",
+        "name": "Toxic Flow (Data)",
+        "source": "mcp-scan",
+        "category": "flow",
+        "severity": "high",
+        "weight": 8,
+        "satisfied": true,
+        "scoreContribution": 8,
+        "evidence": {
+          "type": "toxicFlow",
+          "flowId": "github-api-flow",
+          "kind": "TF002",
+          "nodes": ["authenticate", "fetch-repos", "process-data", "return-results"],
+          "edges": [["authenticate", "fetch-repos"], ["fetch-repos", "process-data"], ["process-data", "return-results"]],
+          "detected": false,
+          "topExample": "Clean GitHub API flow with proper authentication and data handling"
+        }
+      }
+    },
+    "vizByCategory": [
+      { "category": "transport", "earned": 10, "max": 10, "percent": 100 },
+      { "category": "authz", "earned": 20, "max": 20, "percent": 100 },
+      { "category": "protocol", "earned": 8, "max": 14, "percent": 57 },
+      { "category": "tools", "earned": 8, "max": 8, "percent": 100 },
+      { "category": "supply_chain", "earned": 6, "max": 6, "percent": 100 },
+      { "category": "runtime", "earned": 10, "max": 18, "percent": 56 },
+      { "category": "flow", "earned": 8, "max": 8, "percent": 100 }
+    ],
+    "providers": {
+      "mcpValidator": { "version": "2.1.0" },
+      "mcpScan": { "version": "1.8.3" }
+    }
+  },
+  "evaluationRun": {
+    "startedAt": "2024-01-15T09:10:00Z",
+    "finishedAt": "2024-01-15T09:15:00Z",
+    "metadata": {
+      "generatedAt": "2024-01-15T09:15:00Z",
+      "toolVersion": "mcp-tester-v2.1.0",
+      "datasetVersion": "security-checks-v1.5"
+    }
+  }
+}

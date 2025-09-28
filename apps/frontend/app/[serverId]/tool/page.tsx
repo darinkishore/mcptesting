@@ -1,21 +1,23 @@
 import { MCPServer } from '../../mcp-types';
-import { ToolScore, taskEvaluations } from './tool-score';
+import { ToolScore } from './tool-score';
 import { ToolScoreDisplay } from './tool-score-display';
+import { dataLoader } from '../../../lib/data-loader';
+import { notFound } from 'next/navigation';
 
-// Mock data - replace with actual API calls
-async function getServer(serverId: string): Promise<MCPServer> {
-  // This would be: const res = await fetch(`${API_BASE_URL}/api/servers/${serverId}`);
-  return {
-    id: serverId,
-    name: 'MCP Filesystem',
-    description: 'File system operations server',
-    repository: 'https://github.com/modelcontextprotocol/servers',
-    totalScore: 95,
-    toolScore: 98,
-    securityScore: 92,
-    lastTested: '2024-01-15T10:30:00Z',
-    status: 'passing'
-  };
+// Dynamic data loading from JSON files
+async function getServerData(serverId: string) {
+  try {
+    const data = await dataLoader.getServerData(serverId);
+
+    if (!data) {
+      notFound();
+    }
+
+    return data;
+  } catch (error) {
+    console.error(`Error loading server ${serverId}:`, error);
+    notFound();
+  }
 }
 
 interface ToolPageProps {
@@ -24,14 +26,17 @@ interface ToolPageProps {
 
 export default async function ToolEvaluationPage({ params }: ToolPageProps) {
   const { serverId } = await params;
-  const server = await getServer(serverId);
+  const data = await getServerData(serverId);
 
   return (
     <div className="space-y-0">
       <ToolScoreDisplay
-        taskEvaluations={taskEvaluations}
+        taskEvaluations={data.toolEvaluation.taskEvaluations}
       />
-      <ToolScore serverName={server.name} />
+      <ToolScore
+        serverName={data.server.name}
+        taskEvaluations={data.toolEvaluation.taskEvaluations}
+      />
     </div>
   );
 }

@@ -7,57 +7,41 @@ interface TaskEvaluation {
   description: string
   score: 'CRIT' | 'HIGH' | 'MED' | 'LOW'
   explanation: string
-  icon: React.ReactNode
+  icon: string
 }
 
 interface ToolScoreProps {
   serverName: string
+  taskEvaluations: TaskEvaluation[]
 }
 
-export const taskEvaluations: TaskEvaluation[] = [
-  {
-    id: 'web-search-accuracy',
-    name: 'Web Search Accuracy',
-    description: 'Ability to find relevant, up-to-date information from web sources',
-    score: 'HIGH',
-    explanation: 'Consistently returns accurate results with proper source attribution and minimal hallucinations',
-    icon: <Search className="h-6 w-6" />
-  },
-  {
-    id: 'query-understanding',
-    name: 'Natural Language Query Processing',
-    description: 'Understanding complex, ambiguous, or contextual search queries',
-    score: 'HIGH',
-    explanation: 'Handles nuanced queries well, interprets context and intent effectively',
-    icon: <Brain className="h-6 w-6" />
-  },
-  {
-    id: 'response-speed',
-    name: 'Response Time Performance',
-    description: 'Speed of processing and returning search results to users',
-    score: 'MED',
-    explanation: 'Moderate latency due to external API dependencies, could benefit from caching optimizations',
-    icon: <Zap className="h-6 w-6" />
-  },
-  {
-    id: 'content-filtering',
-    name: 'Content Safety & Filtering',
-    description: 'Filtering inappropriate content and maintaining result quality',
-    score: 'CRIT',
-    explanation: 'Excellent content moderation with comprehensive safety filters and quality assurance',
-    icon: <FileText className="h-6 w-6" />
-  },
-  {
-    id: 'source-diversity',
-    name: 'Source Diversity & Coverage',
-    description: 'Accessing diverse, authoritative sources across different domains',
-    score: 'HIGH',
-    explanation: 'Wide coverage of reputable sources with good domain diversity and credibility checks',
-    icon: <Globe className="h-6 w-6" />
-  }
-]
+// Icon mapping for dynamic task evaluations
+const getIcon = (iconName: string) => {
+  const iconMap: Record<string, React.ReactNode> = {
+    'FileText': <FileText className="h-6 w-6" />,
+    'Shield': <Search className="h-6 w-6" />,
+    'FolderOpen': <FileText className="h-6 w-6" />,
+    'Lock': <Brain className="h-6 w-6" />,
+    'AlertTriangle': <Zap className="h-6 w-6" />,
+    'Key': <Brain className="h-6 w-6" />,
+    'GitBranch': <Globe className="h-6 w-6" />,
+    'GitPullRequest': <FileText className="h-6 w-6" />,
+    'Webhook': <Search className="h-6 w-6" />,
+    'Clock': <Zap className="h-6 w-6" />,
+    'Database': <FileText className="h-6 w-6" />,
+    'Link': <Brain className="h-6 w-6" />,
+    'Table': <Globe className="h-6 w-6" />,
+    'Archive': <FileText className="h-6 w-6" />,
+    'Search': <Search className="h-6 w-6" />,
+    'Brain': <Brain className="h-6 w-6" />,
+    'Zap': <Zap className="h-6 w-6" />,
+    'Globe': <Globe className="h-6 w-6" />
+  };
 
-export const ToolScore: React.FC<ToolScoreProps> = ({ serverName }) => {
+  return iconMap[iconName] || <FileText className="h-6 w-6" />;
+}
+
+export const ToolScore: React.FC<ToolScoreProps> = ({ serverName, taskEvaluations }) => {
   const getScoreColor = (score: string) => {
     switch (score) {
       case 'CRIT':
@@ -103,7 +87,7 @@ export const ToolScore: React.FC<ToolScoreProps> = ({ serverName }) => {
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center">
                 <div className={`${getScoreColor(task.score)} mr-2`}>
-                  {task.icon}
+                  {getIcon(task.icon)}
                 </div>
                 <div>
                   <h3 className="font-bold text-sm uppercase leading-tight">

@@ -54,12 +54,12 @@ export const ScorePieChart: React.FC<ScorePieChartProps> = ({
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className={`text-2xl font-bold ${scoreColor}`}>
+          <span className={`text-lg font-bold ${scoreColor}`}>
             {score.toFixed(1)}
           </span>
         </div>
       </div>
-      <span className="text-xs uppercase mt-1">Score</span>
+      <span className="text-xs uppercase mt-1">Security Score</span>
     </div>
   )
 }
