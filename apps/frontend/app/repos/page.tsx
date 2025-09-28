@@ -8,8 +8,14 @@ import {
   fetchRepository,
 } from '@/lib/api'
 import { SecurityDashboard } from '../[serverId]/security/security-dashboard'
-import type { SecurityLint } from '@/types/security'
-import type { ProvidersMeta, ServerMeta, EvaluationRun, ServerId, RunId } from '@/types'
+import type { SecurityLint } from '@/app/types/security'
+import type {
+  ProvidersMeta,
+  ServerMeta,
+  EvaluationRun,
+  ServerId,
+  RunId,
+} from '@/app/types'
 
 const POLL_INTERVAL = 5000
 
@@ -78,12 +84,16 @@ export default function RepositoriesPage() {
   }, [])
 
   useEffect(() => {
-    if (!focusedRepoId) return
+    if (!focusedRepoId) {
+      return
+    }
+
+    const repoId = focusedRepoId
     let active = true
 
-    async function pollRepo() {
+    async function pollRepo(id: string) {
       try {
-        const data = await fetchRepository(focusedRepoId)
+        const data = await fetchRepository(id)
         if (active) {
           setRepos(prev => {
             const map = new Map(prev.map(r => [r.id, r]))
@@ -101,11 +111,11 @@ export default function RepositoriesPage() {
         }
       }
       if (active) {
-        setTimeout(pollRepo, POLL_INTERVAL)
+        setTimeout(() => pollRepo(id), POLL_INTERVAL)
       }
     }
 
-    pollRepo()
+    pollRepo(repoId)
     return () => {
       active = false
     }

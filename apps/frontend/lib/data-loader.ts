@@ -20,7 +20,7 @@ interface SecurityCheck {
   weight: number
   satisfied: boolean
   scoreContribution: number
-  evidence: any
+  evidence: unknown
 }
 
 interface SecurityAnalysis {

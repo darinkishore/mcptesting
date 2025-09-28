@@ -107,3 +107,11 @@ export interface SecurityLint {
   }>;
   vizByCategory?: Array<{ category: string; earned: number; max: number; percent: number }>;
 }
+
+/** Lightweight summary used for UI descriptions and API payloads */
+export interface SecurityCheckSummary {
+  name: string;
+  status: 'passed' | 'failed' | 'warning';
+  severity: Severity;
+  category?: SecurityCheck['category'] | string;
+}

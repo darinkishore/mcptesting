@@ -2,12 +2,13 @@ import React from 'react'
 import { Shield, ShieldCheck, ShieldAlert } from 'lucide-react'
 import { ScorePieChart } from './security-pie-chart'
 import { SecurityDescription } from './security-description'
+import type { SecurityCheckSummary } from '@/app/types/security'
 
 interface ScoreDisplayProps {
   score: number
   passedChecks: number
   totalChecks: number
-  securityChecks?: Array<{ name: string; status: string; severity: string; category?: string }>
+  securityChecks?: SecurityCheckSummary[]
 }
 
 export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({

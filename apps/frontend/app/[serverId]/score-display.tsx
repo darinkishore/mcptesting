@@ -1,6 +1,6 @@
 import React from 'react'
 import { Shield, ShieldCheck, ShieldAlert } from 'lucide-react'
-import { ScorePieChart } from './score-pie-chart'
+import { ScorePieChart } from './security/security-pie-chart'
 
 interface ScoreDisplayProps {
   score: number

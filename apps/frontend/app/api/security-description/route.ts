@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { SecurityCheckSummary } from '@/app/types/security'
 
 interface SwarmsCompletionRequest {
   name: string
@@ -23,11 +24,57 @@ interface SwarmsCompletionResponse {
   error?: string
 }
 
+interface SecurityDescriptionRequest {
+  score: number
+  passedChecks: number
+  totalChecks: number
+  securityChecks?: SecurityCheckSummary[]
+}
+
+function isSecurityCheckSummary(value: unknown): value is SecurityCheckSummary {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+
+  const check = value as Partial<SecurityCheckSummary>
+  const validStatus = check.status === 'passed' || check.status === 'failed' || check.status === 'warning'
+  return typeof check.name === 'string' && typeof check.severity === 'string' && validStatus
+}
+
+function isSecurityDescriptionRequest(value: unknown): value is SecurityDescriptionRequest {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+
+  const payload = value as Partial<SecurityDescriptionRequest>
+  if (typeof payload.score !== 'number' || typeof payload.passedChecks !== 'number' || typeof payload.totalChecks !== 'number') {
+    return false
+  }
+
+  if (payload.securityChecks === undefined) {
+    return true
+  }
+
+  if (!Array.isArray(payload.securityChecks)) {
+    return false
+  }
+
+  return payload.securityChecks.every(isSecurityCheckSummary)
+}
+
 export async function POST(request: NextRequest) {
-  let requestData: any
+  let requestData: SecurityDescriptionRequest | undefined
 
   try {
-    requestData = await request.json()
+    const body: unknown = await request.json()
+    if (!isSecurityDescriptionRequest(body)) {
+      return NextResponse.json(
+        { error: 'Invalid security description payload' },
+        { status: 400 }
+      )
+    }
+
+    requestData = body
     const { score, passedChecks, totalChecks, securityChecks } = requestData
 
     const apiKey = process.env.SWARMS_API_KEY
@@ -39,13 +86,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Organize security checks by category and status
-    const checksByCategory: Record<string, { passed: any[], failed: any[] }> = {}
-    const criticalIssues: any[] = []
-    const warnings: any[] = []
+    const checksByCategory: Record<string, { passed: SecurityCheckSummary[]; failed: SecurityCheckSummary[] }> = {}
+    const criticalIssues: SecurityCheckSummary[] = []
+    const warnings: SecurityCheckSummary[] = []
 
     if (securityChecks) {
-      securityChecks.forEach((check: any) => {
-        const category = check.category || 'general'
+      securityChecks.forEach((check) => {
+        const category = check.category ?? 'general'
         if (!checksByCategory[category]) {
           checksByCategory[category] = { passed: [], failed: [] }
         }
@@ -156,19 +203,25 @@ Generate a professional security analysis summary that:
   }
 }
 
-function getFallbackDescription(score: number, securityChecks?: any[]): string {
+function getFallbackDescription(score: number, securityChecks?: SecurityCheckSummary[]): string {
   // Analyze security checks for more contextual fallback
   if (securityChecks && securityChecks.length > 0) {
     const criticalFailures = securityChecks.filter(c => c.status === 'failed' && c.severity === 'critical')
-    const categories = [...new Set(securityChecks.map(c => c.category))]
+    const categories = [...new Set(
+      securityChecks
+        .map(c => c.category)
+        .filter((category): category is string => Boolean(category))
+    )]
 
-    if (criticalFailures.length > 0) {
+    if (criticalFailures.length > 0 && categories.length > 0) {
       return `Critical security vulnerabilities identified in ${categories.join(', ')} requiring immediate remediation to ensure MCP server integrity.`
     }
 
-    if (score >= 90) {
+    if (score >= 90 && categories.length > 0) {
       return `Strong security implementation across ${categories.join(', ')} domains with comprehensive protection measures in place.`
-    } else if (score >= 70) {
+    }
+
+    if (score >= 70 && categories.length > 0) {
       return `Solid security foundation with room for enhancement in specific areas to achieve optimal protection levels.`
     }
   }
@@ -176,11 +229,15 @@ function getFallbackDescription(score: number, securityChecks?: any[]): string {
   // Default fallbacks if no check data available
   if (score >= 90) {
     return "Excellent security posture with robust compliance across all critical security domains."
-  } else if (score >= 70) {
-    return "Good security implementation with minor areas for improvement in security controls."
-  } else if (score >= 50) {
-    return "Moderate security compliance with several areas requiring immediate attention and remediation."
-  } else {
-    return "Critical security vulnerabilities detected requiring urgent remediation across multiple security domains."
   }
+
+  if (score >= 70) {
+    return "Good security implementation with minor areas for improvement in security controls."
+  }
+
+  if (score >= 50) {
+    return "Moderate security compliance with several areas requiring immediate attention and remediation."
+  }
+
+  return "Critical security vulnerabilities detected requiring urgent remediation across multiple security domains."
 }
