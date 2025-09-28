@@ -1,6 +1,8 @@
+
 import { notFound } from 'next/navigation'
 import { SecurityScanClient } from './security-scan-client'
 import { getSecurityServerConfig } from './server-registry'
+
 
 interface SecurityPageProps {
   params: Promise<{ serverId: string }>;

@@ -16,12 +16,18 @@ export const ToolScoreDisplay: React.FC<ToolScoreDisplayProps> = ({
   taskEvaluations,
 }) => {
   const getOverallScore = () => {
-    const scoreValues = { CRIT: 4, HIGH: 3, MED: 2, LOW: 1 }
-    const total = taskEvaluations.reduce((sum, task) => sum + scoreValues[task.score], 0)
-    const average = total / taskEvaluations.length
-    const percentage = (average / 4) * 100
+    if (taskEvaluations.length === 0) return { average: '0.0', percentage: '0.0', numericPercentage: 0 }
+
+    // Use the same scoring system as the data loader and overview cards
+    const scoreValues = { CRIT: 100, HIGH: 80, MED: 60, LOW: 30 }
+    const total = taskEvaluations.reduce((sum, task) => sum + (scoreValues[task.score] || 0), 0)
+    const percentage = Math.round(total / taskEvaluations.length)
+
+    // Convert to 4.0 scale for display consistency
+    const fourPointScale = (percentage / 100) * 4
+
     return {
-      average: average.toFixed(1),
+      average: fourPointScale.toFixed(1),
       percentage: percentage.toFixed(1),
       numericPercentage: percentage
     }

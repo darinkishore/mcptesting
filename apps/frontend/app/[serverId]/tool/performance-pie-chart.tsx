@@ -54,12 +54,12 @@ export const PerformancePieChart: React.FC<PerformancePieChartProps> = ({
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className={`text-2xl font-bold ${scoreColor}`}>
+          <span className={`text-lg font-bold ${scoreColor}`}>
             {percentage.toFixed(1)}%
           </span>
         </div>
       </div>
-      <span className="text-xs uppercase mt-1">Performance</span>
+      <span className="text-xs uppercase mt-1">Tool Score</span>
     </div>
   )
 }

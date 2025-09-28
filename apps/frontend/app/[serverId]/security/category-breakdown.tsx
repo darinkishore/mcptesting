@@ -1,15 +1,5 @@
-'use client'
-
 import React from 'react'
-import {
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
-  ResponsiveContainer,
-  Tooltip,
-} from 'recharts'
+import { SecurityRadarChart } from './security-radar-chart'
 
 interface CategoryData {
   category: string
@@ -25,51 +15,12 @@ interface CategoryBreakdownProps {
 export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({
   categories,
 }) => {
-  // Transform data for radar chart
-  const radarData = categories.map((cat) => ({
-    subject: cat.category.toUpperCase(),
-    A: cat.percent,
-    fullMark: 100,
-  }))
 
   return (
     <div className="neo-component p-4 mt-4">
       <h2 className="text-xl font-bold mb-2">SECURITY COVERAGE BY CATEGORY</h2>
       <div className="flex flex-col md:flex-row">
-        <div className="md:w-1/2 h-56">
-          <ResponsiveContainer width="100%" height="100%">
-            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-              <PolarGrid stroke="#000" strokeWidth={1} />
-              <PolarAngleAxis
-                dataKey="subject"
-                tick={{
-                  fill: '#000',
-                  fontSize: 9,
-                }}
-                stroke="#000"
-                strokeWidth={2}
-              />
-              <PolarRadiusAxis
-                angle={30}
-                domain={[0, 100]}
-                stroke="#000"
-                strokeWidth={2}
-                tick={{
-                  fill: '#000',
-                }}
-              />
-              <Radar
-                name="Security Coverage"
-                dataKey="A"
-                stroke="#000"
-                strokeWidth={2}
-                fill="#00f0ff"
-                fillOpacity={0.6}
-              />
-              <Tooltip formatter={(value) => [`${value}%`, 'COVERAGE']} />
-            </RadarChart>
-          </ResponsiveContainer>
-        </div>
+        <SecurityRadarChart categories={categories} />
         <div className="md:w-1/2 md:pl-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 h-full">
             {categories.map((cat) => (

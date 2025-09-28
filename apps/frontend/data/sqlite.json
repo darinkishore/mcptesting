@@ -1,0 +1,259 @@
+{
+  "server": {
+    "id": "sqlite",
+    "name": "MCP SQLite",
+    "description": "SQLite database server providing secure database operations and query execution",
+    "version": "1.0.8",
+    "repository": "https://github.com/modelcontextprotocol/servers",
+    "totalScore": 63,
+    "toolScore": 65,
+    "securityScore": 44,
+    "lastTested": "2024-01-15T08:00:00Z",
+    "status": "failing"
+  },
+  "toolEvaluation": {
+    "taskEvaluations": [
+      {
+        "id": "query-execution",
+        "name": "SQL Query Execution",
+        "description": "Safe execution of SQL queries with result formatting and error handling",
+        "score": "HIGH",
+        "explanation": "Solid query execution capabilities with good error handling and result parsing",
+        "icon": "Database"
+      },
+      {
+        "id": "connection-management",
+        "name": "Database Connection Handling",
+        "description": "Managing database connections, pooling, and transaction isolation",
+        "score": "MED",
+        "explanation": "Basic connection management with room for improvement in connection pooling",
+        "icon": "Link"
+      },
+      {
+        "id": "sql-injection-prevention",
+        "name": "SQL Injection Protection",
+        "description": "Preventing SQL injection through parameterized queries and input validation",
+        "score": "LOW",
+        "explanation": "Critical vulnerabilities in SQL injection prevention, needs immediate attention",
+        "icon": "Shield"
+      },
+      {
+        "id": "schema-operations",
+        "name": "Schema Management",
+        "description": "Creating, modifying, and managing database schema and table structures",
+        "score": "HIGH",
+        "explanation": "Excellent schema management capabilities with comprehensive DDL support",
+        "icon": "Table"
+      },
+      {
+        "id": "backup-recovery",
+        "name": "Backup & Recovery",
+        "description": "Database backup creation and restoration capabilities",
+        "score": "MED",
+        "explanation": "Basic backup functionality with limited recovery options and scheduling",
+        "icon": "Archive"
+      }
+    ]
+  },
+  "securityAnalysis": {
+    "score": 44,
+    "passedChecks": 4,
+    "totalChecks": 10,
+    "checks": {
+      "VAL-ORIGIN-VALIDATION": {
+        "id": "VAL-ORIGIN-VALIDATION",
+        "name": "Origin Validation",
+        "source": "mcp-validator",
+        "category": "transport",
+        "severity": "critical",
+        "weight": 10,
+        "satisfied": false,
+        "scoreContribution": 0,
+        "evidence": {
+          "type": "validatorAssertion",
+          "testId": "origin-validation",
+          "expected": "valid-origin-header",
+          "actual": "missing-origin-validation",
+          "satisfied": false
+        }
+      },
+      "VAL-BEARER-TOKEN": {
+        "id": "VAL-BEARER-TOKEN",
+        "name": "Bearer Token",
+        "source": "mcp-validator",
+        "category": "authz",
+        "severity": "critical",
+        "weight": 10,
+        "satisfied": false,
+        "scoreContribution": 0,
+        "evidence": {
+          "type": "validatorAssertion",
+          "testId": "bearer-token",
+          "expected": "valid-bearer-token",
+          "actual": "no-authentication",
+          "satisfied": false
+        }
+      },
+      "VAL-SCOPE-ENFORCEMENT": {
+        "id": "VAL-SCOPE-ENFORCEMENT",
+        "name": "Scope Enforcement",
+        "source": "mcp-validator",
+        "category": "authz",
+        "severity": "critical",
+        "weight": 10,
+        "satisfied": false,
+        "scoreContribution": 0,
+        "evidence": {
+          "type": "validatorAssertion",
+          "testId": "scope-enforcement",
+          "expected": "database-read-only",
+          "actual": "full-database-access",
+          "satisfied": false
+        }
+      },
+      "VAL-NO-BATCHING": {
+        "id": "VAL-NO-BATCHING",
+        "name": "No Batching",
+        "source": "mcp-validator",
+        "category": "protocol",
+        "severity": "medium",
+        "weight": 6,
+        "satisfied": true,
+        "scoreContribution": 6,
+        "evidence": {
+          "type": "validatorAssertion",
+          "testId": "no-batching",
+          "expected": "single-request-only",
+          "actual": "single-request-only",
+          "satisfied": true
+        }
+      },
+      "VAL-SCHEMA-ENFORCED": {
+        "id": "VAL-SCHEMA-ENFORCED",
+        "name": "Schema Enforced",
+        "source": "mcp-validator",
+        "category": "protocol",
+        "severity": "high",
+        "weight": 8,
+        "satisfied": true,
+        "scoreContribution": 8,
+        "evidence": {
+          "type": "validatorAssertion",
+          "testId": "schema-enforcement",
+          "expected": "strict-sql-schema",
+          "actual": "strict-sql-schema",
+          "satisfied": true
+        }
+      },
+      "SCAN-PROMPT-INJECTION": {
+        "id": "SCAN-PROMPT-INJECTION",
+        "name": "Prompt Injection",
+        "source": "mcp-scan",
+        "category": "tools",
+        "severity": "high",
+        "weight": 8,
+        "satisfied": false,
+        "scoreContribution": 0,
+        "evidence": {
+          "type": "scanIssue",
+          "code": "PI001",
+          "entity": "sql-query-construction",
+          "severity": "high",
+          "message": "SQL injection vulnerability allows prompt injection through query parameters"
+        }
+      },
+      "SCAN-INTEGRITY-PINNING": {
+        "id": "SCAN-INTEGRITY-PINNING",
+        "name": "Integrity Pinning",
+        "source": "mcp-scan",
+        "category": "supply_chain",
+        "severity": "medium",
+        "weight": 6,
+        "satisfied": false,
+        "scoreContribution": 0,
+        "evidence": {
+          "type": "scanIssue",
+          "code": "IP001",
+          "entity": "sqlite-dependencies",
+          "severity": "medium",
+          "message": "No integrity pinning for SQLite library and database drivers"
+        }
+      },
+      "SCAN-PII-LEAK": {
+        "id": "SCAN-PII-LEAK",
+        "name": "PII Leak",
+        "source": "mcp-scan",
+        "category": "runtime",
+        "severity": "high",
+        "weight": 8,
+        "satisfied": false,
+        "scoreContribution": 0,
+        "evidence": {
+          "type": "scanIssue",
+          "code": "PII001",
+          "entity": "query-logging",
+          "severity": "high",
+          "message": "Database queries containing PII are logged in plaintext without redaction"
+        }
+      },
+      "SCAN-SECRETS-LEAK": {
+        "id": "SCAN-SECRETS-LEAK",
+        "name": "Secrets Leak",
+        "source": "mcp-scan",
+        "category": "runtime",
+        "severity": "critical",
+        "weight": 10,
+        "satisfied": true,
+        "scoreContribution": 10,
+        "evidence": {
+          "type": "scanIssue",
+          "code": "SL001",
+          "entity": "database-credentials",
+          "severity": "info",
+          "message": "Database credentials are properly encrypted and not hardcoded"
+        }
+      },
+      "SCAN-TOXIC-FLOW": {
+        "id": "SCAN-TOXIC-FLOW",
+        "name": "Toxic Flow (Data)",
+        "source": "mcp-scan",
+        "category": "flow",
+        "severity": "high",
+        "weight": 8,
+        "satisfied": true,
+        "scoreContribution": 8,
+        "evidence": {
+          "type": "toxicFlow",
+          "flowId": "sql-execution-flow",
+          "kind": "TF003",
+          "nodes": ["receive-query", "validate-syntax", "execute-sql", "return-results"],
+          "edges": [["receive-query", "validate-syntax"], ["validate-syntax", "execute-sql"], ["execute-sql", "return-results"]],
+          "detected": false,
+          "topExample": "SQL execution flow with basic syntax validation but vulnerable to injection"
+        }
+      }
+    },
+    "vizByCategory": [
+      { "category": "transport", "earned": 0, "max": 10, "percent": 0 },
+      { "category": "authz", "earned": 0, "max": 20, "percent": 0 },
+      { "category": "protocol", "earned": 14, "max": 14, "percent": 100 },
+      { "category": "tools", "earned": 0, "max": 8, "percent": 0 },
+      { "category": "supply_chain", "earned": 0, "max": 6, "percent": 0 },
+      { "category": "runtime", "earned": 10, "max": 18, "percent": 56 },
+      { "category": "flow", "earned": 8, "max": 8, "percent": 100 }
+    ],
+    "providers": {
+      "mcpValidator": { "version": "2.1.0" },
+      "mcpScan": { "version": "1.8.3" }
+    }
+  },
+  "evaluationRun": {
+    "startedAt": "2024-01-15T07:55:00Z",
+    "finishedAt": "2024-01-15T08:00:00Z",
+    "metadata": {
+      "generatedAt": "2024-01-15T08:00:00Z",
+      "toolVersion": "mcp-tester-v2.1.0",
+      "datasetVersion": "security-checks-v1.5"
+    }
+  }
+}

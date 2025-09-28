@@ -1,23 +1,35 @@
 import React from 'react'
 import { Shield, Wrench, Target } from 'lucide-react'
-import { taskEvaluations } from './tool/tool-score'
+
+interface TaskEvaluation {
+  id: string
+  name: string
+  description: string
+  score: 'CRIT' | 'HIGH' | 'MED' | 'LOW'
+  explanation: string
+  icon: string
+}
 
 interface OverviewCardsProps {
   securityScore: number
   passedChecks: number
   totalChecks: number
+  taskEvaluations: TaskEvaluation[]
 }
 
 export const OverviewCards: React.FC<OverviewCardsProps> = ({
   securityScore,
   passedChecks,
   totalChecks,
+  taskEvaluations,
 }) => {
   const getToolFunctionalityScore = () => {
-    const scoreValues = { CRIT: 4, HIGH: 3, MED: 2, LOW: 1 }
-    const total = taskEvaluations.reduce((sum, task) => sum + scoreValues[task.score], 0)
-    const percentage = (total / (taskEvaluations.length * 4)) * 100
-    return percentage
+    if (taskEvaluations.length === 0) return 0
+
+    // Use the same scoring system as the data loader
+    const scoreValues = { CRIT: 100, HIGH: 80, MED: 60, LOW: 30 }
+    const total = taskEvaluations.reduce((sum, task) => sum + (scoreValues[task.score] || 0), 0)
+    return Math.round(total / taskEvaluations.length)
   }
 
   const getTotalScore = () => {

@@ -1,0 +1,259 @@
+{
+  "server": {
+    "id": "filesystem",
+    "name": "MCP Filesystem",
+    "description": "File system operations server providing secure access to local file operations",
+    "version": "1.2.4",
+    "repository": "https://github.com/modelcontextprotocol/servers",
+    "totalScore": 94,
+    "toolScore": 86,
+    "securityScore": 90,
+    "lastTested": "2024-01-15T10:30:00Z",
+    "status": "passing"
+  },
+  "toolEvaluation": {
+    "taskEvaluations": [
+      {
+        "id": "file-read-accuracy",
+        "name": "File Read Operations",
+        "description": "Ability to securely read files from the filesystem with proper error handling",
+        "score": "CRIT",
+        "explanation": "Excellent file reading capabilities with comprehensive error handling and security validation",
+        "icon": "FileText"
+      },
+      {
+        "id": "file-write-safety",
+        "name": "File Write Security",
+        "description": "Safe file writing operations with permission validation and backup mechanisms",
+        "score": "HIGH",
+        "explanation": "Strong write operations with proper permission checks and atomic operations",
+        "icon": "Shield"
+      },
+      {
+        "id": "directory-traversal",
+        "name": "Directory Navigation",
+        "description": "Secure directory listing and navigation with path validation",
+        "score": "CRIT",
+        "explanation": "Robust directory operations with excellent path sanitization and access control",
+        "icon": "FolderOpen"
+      },
+      {
+        "id": "permission-handling",
+        "name": "Permission Management",
+        "description": "Proper handling of file system permissions and access controls",
+        "score": "HIGH",
+        "explanation": "Good permission validation with room for enhancement in privilege escalation detection",
+        "icon": "Lock"
+      },
+      {
+        "id": "error-recovery",
+        "name": "Error Recovery & Resilience",
+        "description": "Handling of filesystem errors and recovery mechanisms",
+        "score": "MED",
+        "explanation": "Adequate error handling with some opportunities for improved recovery strategies",
+        "icon": "AlertTriangle"
+      }
+    ]
+  },
+  "securityAnalysis": {
+    "score": 90,
+    "passedChecks": 9,
+    "totalChecks": 10,
+    "checks": {
+      "VAL-ORIGIN-VALIDATION": {
+        "id": "VAL-ORIGIN-VALIDATION",
+        "name": "Origin Validation",
+        "source": "mcp-validator",
+        "category": "transport",
+        "severity": "critical",
+        "weight": 10,
+        "satisfied": true,
+        "scoreContribution": 10,
+        "evidence": {
+          "type": "validatorAssertion",
+          "testId": "origin-validation",
+          "expected": "valid-origin-header",
+          "actual": "valid-origin-header",
+          "satisfied": true
+        }
+      },
+      "VAL-BEARER-TOKEN": {
+        "id": "VAL-BEARER-TOKEN",
+        "name": "Bearer Token",
+        "source": "mcp-validator",
+        "category": "authz",
+        "severity": "critical",
+        "weight": 10,
+        "satisfied": true,
+        "scoreContribution": 10,
+        "evidence": {
+          "type": "validatorAssertion",
+          "testId": "bearer-token",
+          "expected": "valid-bearer-token",
+          "actual": "valid-bearer-token",
+          "satisfied": true
+        }
+      },
+      "VAL-SCOPE-ENFORCEMENT": {
+        "id": "VAL-SCOPE-ENFORCEMENT",
+        "name": "Scope Enforcement",
+        "source": "mcp-validator",
+        "category": "authz",
+        "severity": "critical",
+        "weight": 10,
+        "satisfied": true,
+        "scoreContribution": 10,
+        "evidence": {
+          "type": "validatorAssertion",
+          "testId": "scope-enforcement",
+          "expected": "filesystem-read-only",
+          "actual": "filesystem-read-only",
+          "satisfied": true
+        }
+      },
+      "VAL-NO-BATCHING": {
+        "id": "VAL-NO-BATCHING",
+        "name": "No Batching",
+        "source": "mcp-validator",
+        "category": "protocol",
+        "severity": "medium",
+        "weight": 6,
+        "satisfied": true,
+        "scoreContribution": 6,
+        "evidence": {
+          "type": "validatorAssertion",
+          "testId": "no-batching",
+          "expected": "single-request-only",
+          "actual": "single-request-only",
+          "satisfied": true
+        }
+      },
+      "VAL-SCHEMA-ENFORCED": {
+        "id": "VAL-SCHEMA-ENFORCED",
+        "name": "Schema Enforced",
+        "source": "mcp-validator",
+        "category": "protocol",
+        "severity": "high",
+        "weight": 8,
+        "satisfied": true,
+        "scoreContribution": 8,
+        "evidence": {
+          "type": "validatorAssertion",
+          "testId": "schema-enforcement",
+          "expected": "strict-schema-validation",
+          "actual": "strict-schema-validation",
+          "satisfied": true
+        }
+      },
+      "SCAN-PROMPT-INJECTION": {
+        "id": "SCAN-PROMPT-INJECTION",
+        "name": "Prompt Injection",
+        "source": "mcp-scan",
+        "category": "tools",
+        "severity": "high",
+        "weight": 8,
+        "satisfied": true,
+        "scoreContribution": 8,
+        "evidence": {
+          "type": "scanIssue",
+          "code": "PI001",
+          "entity": "file-operations",
+          "severity": "info",
+          "message": "No prompt injection vulnerabilities detected in file operation tools"
+        }
+      },
+      "SCAN-INTEGRITY-PINNING": {
+        "id": "SCAN-INTEGRITY-PINNING",
+        "name": "Integrity Pinning",
+        "source": "mcp-scan",
+        "category": "supply_chain",
+        "severity": "medium",
+        "weight": 6,
+        "satisfied": false,
+        "scoreContribution": 0,
+        "evidence": {
+          "type": "scanIssue",
+          "code": "IP001",
+          "entity": "dependencies",
+          "severity": "medium",
+          "message": "No subresource integrity pinning found for external dependencies"
+        }
+      },
+      "SCAN-PII-LEAK": {
+        "id": "SCAN-PII-LEAK",
+        "name": "PII Leak",
+        "source": "mcp-scan",
+        "category": "runtime",
+        "severity": "high",
+        "weight": 8,
+        "satisfied": true,
+        "scoreContribution": 8,
+        "evidence": {
+          "type": "scanIssue",
+          "code": "PII001",
+          "entity": "file-content-processing",
+          "severity": "info",
+          "message": "No PII exposure detected in file content processing"
+        }
+      },
+      "SCAN-SECRETS-LEAK": {
+        "id": "SCAN-SECRETS-LEAK",
+        "name": "Secrets Leak",
+        "source": "mcp-scan",
+        "category": "runtime",
+        "severity": "critical",
+        "weight": 10,
+        "satisfied": true,
+        "scoreContribution": 10,
+        "evidence": {
+          "type": "scanIssue",
+          "code": "SL001",
+          "entity": "file-operations",
+          "severity": "info",
+          "message": "No hardcoded secrets or API keys detected in filesystem operations"
+        }
+      },
+      "SCAN-TOXIC-FLOW": {
+        "id": "SCAN-TOXIC-FLOW",
+        "name": "Toxic Flow (Data)",
+        "source": "mcp-scan",
+        "category": "flow",
+        "severity": "high",
+        "weight": 8,
+        "satisfied": true,
+        "scoreContribution": 8,
+        "evidence": {
+          "type": "toxicFlow",
+          "flowId": "file-read-flow",
+          "kind": "TF001",
+          "nodes": ["read-file", "process-content", "return-data"],
+          "edges": [["read-file", "process-content"], ["process-content", "return-data"]],
+          "detected": false,
+          "topExample": "Clean file processing flow with no toxic patterns"
+        }
+      }
+    },
+    "vizByCategory": [
+      { "category": "transport", "earned": 10, "max": 10, "percent": 100 },
+      { "category": "authz", "earned": 20, "max": 20, "percent": 100 },
+      { "category": "protocol", "earned": 14, "max": 14, "percent": 100 },
+      { "category": "tools", "earned": 8, "max": 8, "percent": 100 },
+      { "category": "supply_chain", "earned": 0, "max": 6, "percent": 0 },
+      { "category": "runtime", "earned": 18, "max": 18, "percent": 100 },
+      { "category": "flow", "earned": 8, "max": 8, "percent": 100 }
+    ],
+    "providers": {
+      "mcpValidator": { "version": "2.1.0" },
+      "mcpScan": { "version": "1.8.3" }
+    }
+  },
+  "evaluationRun": {
+    "startedAt": "2024-01-15T10:25:00Z",
+    "finishedAt": "2024-01-15T10:30:00Z",
+    "metadata": {
+      "generatedAt": "2024-01-15T10:30:00Z",
+      "toolVersion": "mcp-tester-v2.1.0",
+      "datasetVersion": "security-checks-v1.5"
+    }
+  }
+}

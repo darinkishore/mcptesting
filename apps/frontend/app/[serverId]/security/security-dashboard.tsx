@@ -1,5 +1,3 @@
-'use client'
-
 import React from 'react'
 import { SecurityLint, ServerMeta, EvaluationRun } from '../../types'
 import { ScoreDisplay } from './score-display'
@@ -50,6 +48,12 @@ export const SecurityDashboard: React.FC<SecurityDashboardProps> = ({
         score={securityLint.score}
         passedChecks={securityLint.passedChecks}
         totalChecks={securityLint.totalChecks}
+        securityChecks={Object.values(securityLint.checks).map(check => ({
+          name: check.name,
+          status: check.satisfied ? 'passed' : 'failed',
+          severity: check.severity,
+          category: check.category
+        }))}
       />
 
       {securityLint.vizByCategory && (
