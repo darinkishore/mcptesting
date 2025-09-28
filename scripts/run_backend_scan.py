@@ -1,14 +1,10 @@
 import asyncio
 import uuid
-from pathlib import Path
 
 from backend.main import (
     ScanInclude,
     ScanJob,
     ScanRequest,
-    _job_storage_dir,
-    _run_mcp_validator_component,
-    _execute_mcp_scan_component,
     _run_scan_job,
     jobs,
     jobs_lock,
@@ -19,9 +15,9 @@ SERVER_URL = "https://mcp.linear.app/mcp"
 
 async def run_manual_job() -> ScanJob:
     request = ScanRequest(
-        serverUrl=SERVER_URL,
+        server_url=SERVER_URL,
         include=ScanInclude(mcpScan=True, mcpValidator=True),
-        oauthScopes="offline_access",
+        oauth_scopes="offline_access",
         timeout_seconds=45,
     )
 

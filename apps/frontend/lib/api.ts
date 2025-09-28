@@ -2,9 +2,11 @@ import {
   API_BASE_URL,
   API_ENDPOINTS,
   apiCall,
+  CreateRepositoryRequest,
   HealthResponse,
   HelloResponse,
   HelloRequest,
+  Repository,
   SecurityScanJobCreated,
   SecurityScanJobStatus,
   SecurityScanRequest,
@@ -66,4 +68,45 @@ export async function fetchSecurityScanJob(jobId: string): Promise<SecurityScanJ
   }
 
   return response.json() as Promise<SecurityScanJobStatus>;
+}
+
+export async function createRepository(
+  payload: CreateRepositoryRequest
+): Promise<Repository> {
+  const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.repositories}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `Failed to create repository (${response.status})`);
+  }
+
+  return response.json() as Promise<Repository>;
+}
+
+export async function fetchRepositories(): Promise<Repository[]> {
+  const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.repositories}`);
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `Failed to fetch repositories (${response.status})`);
+  }
+
+  return response.json() as Promise<Repository[]>;
+}
+
+export async function fetchRepository(repoId: string): Promise<Repository> {
+  const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.repositories}/${repoId}`);
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `Failed to fetch repository (${response.status})`);
+  }
+
+  return response.json() as Promise<Repository>;
 }

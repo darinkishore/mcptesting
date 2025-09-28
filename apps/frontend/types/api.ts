@@ -80,6 +80,7 @@ export const API_ENDPOINTS = {
   hello: '/api/hello',
   users: '/api/users',
   securityScans: '/api/security/scans',
+  repositories: '/api/repos',
 } as const;
 
 // Security Scan API
@@ -94,6 +95,7 @@ export interface SecurityScanRequest {
   headers?: Record<string, string>;
   protocolVersion?: string;
   include?: SecurityScanInclude;
+  oauthScopes?: string;
 }
 
 export type ScanJobStatusValue = 'pending' | 'running' | 'succeeded' | 'error';
@@ -118,6 +120,40 @@ export interface SecurityScanJobStatus {
   result?: SecurityScanJobResult;
   error?: string | null;
 }
+
+// Repository onboarding
+
+export type RepositoryStatus =
+  | 'creating'
+  | 'awaiting_user'
+  | 'authorizing'
+  | 'scanning'
+  | 'ready'
+  | 'error';
+
+export interface Repository {
+  id: string;
+  name: string;
+  serverUrl: string;
+  scopes?: string | null;
+  status: RepositoryStatus;
+  authorizeUrl?: string | null;
+  lastError?: string | null;
+  securityLint?: SecurityLint | null;
+  providers?: ProvidersMeta | null;
+  artifacts?: Record<string, string> | null;
+  createdAt: string;
+  updatedAt: string;
+  lastScanJobId?: string | null;
+}
+
+export interface CreateRepositoryRequest {
+  name: string;
+  serverUrl: string;
+  scopes?: string | null;
+}
+
+export type RepositoryResponse = Repository;
 
 // Helper function for API calls
 

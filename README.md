@@ -98,6 +98,10 @@ The backend can launch full MCP security scans and HTTP compliance checks via `/
    ```
    This script clones both `mcp-scan` and `mcp-validator` next to the repo, creates a writable cache directory (`~/Library/Application Support/mcptesting/mcp-scan`), and writes a `.env` file with the correct environment variables. When it finishes, load them into your shell with `source .env`.
 
+7. **Adding repositories via UI**
+   - With the backend and frontend running, visit `http://localhost:3000/repos`.
+   - Use the “Add Repository” form to enter an MCP server URL. The UI will prompt you to authorize access (opening a new tab). Once the OAuth flow completes, the backend automatically clones the repo, runs MCP Scan + Validator, and displays the results on that page.
+
 ## Helpful Scripts
 
 - `scripts/test_security_scan.py` – run MCP Scan + Validator end-to-end against a given MCP HTTP endpoint with verbose logging.

@@ -15,13 +15,13 @@ from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple
 
 import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from fastapi.responses import HTMLResponse, JSONResponse
+from pydantic import BaseModel, Field, ConfigDict
 from shared.utils import get_version
 from fastmcp.client.auth.oauth import OAuth as FastMCPOAuth
 
@@ -68,6 +68,8 @@ MCP_SCAN_STORAGE_ROOT.mkdir(parents=True, exist_ok=True)
 
 SCAN_TIMEOUT_SECONDS = int(os.environ.get("MCP_SCAN_TIMEOUT_SECONDS", "45"))
 
+OAUTH_CALLBACK_BASE_URL = os.environ.get("MCP_OAUTH_CALLBACK_BASE_URL", "http://localhost:8000").rstrip("/")
+
 
 # ---------------------------------------------------------------------------
 # FastAPI setup
@@ -105,11 +107,13 @@ class ScanRequest(BaseModel):
 
 
 class ScanJobCreated(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
     job_id: str = Field(alias="jobId")
     status: str
 
 
 class ScanJobStatus(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
     job_id: str = Field(alias="jobId")
     status: str
     created_at: datetime = Field(alias="createdAt")
@@ -117,6 +121,29 @@ class ScanJobStatus(BaseModel):
     finished_at: datetime | None = Field(default=None, alias="finishedAt")
     result: Dict[str, Any] | None = None
     error: str | None = None
+
+
+class RepositoryCreateRequest(BaseModel):
+    name: str
+    serverUrl: str
+    scopes: str | None = None
+
+
+class RepositoryResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    id: str
+    name: str
+    serverUrl: str
+    scopes: str | None = None
+    status: RepositoryStatus
+    authorizeUrl: str | None = None
+    lastError: str | None = None
+    securityLint: Dict[str, Any] | None = None
+    providers: Dict[str, Any] | None = None
+    artifacts: Dict[str, str] | None = None
+    createdAt: datetime
+    updatedAt: datetime
+    lastScanJobId: str | None = None
 
 
 @dataclass
@@ -135,6 +162,53 @@ class ScanJob:
 jobs: Dict[str, ScanJob] = {}
 jobs_lock = asyncio.Lock()
 active_tasks: set[asyncio.Task[Any]] = set()
+
+
+# ---------------------------------------------------------------------------
+# Repository storage
+# ---------------------------------------------------------------------------
+
+
+RepositoryStatus = Literal[
+    "creating",
+    "awaiting_user",
+    "authorizing",
+    "scanning",
+    "ready",
+    "error",
+]
+
+
+@dataclass
+class RepositoryAuthState:
+    authorize_event: asyncio.Event = field(default_factory=asyncio.Event)
+    code_future: asyncio.Future[tuple[str, str | None]] | None = None
+    auth: FastMCPOAuth | None = None
+    headers: Dict[str, str] = field(default_factory=dict)
+    storage_dir: Path | None = None
+    authorize_url: str | None = None
+
+
+@dataclass
+class RepositoryRecord:
+    id: str
+    name: str
+    server_url: str
+    scopes: str | None
+    status: RepositoryStatus
+    created_at: datetime
+    updated_at: datetime
+    authorize_url: str | None = None
+    last_error: str | None = None
+    security_lint: Dict[str, Any] | None = None
+    providers: Dict[str, Any] | None = None
+    artifacts: Dict[str, str] | None = None
+    auth_state: RepositoryAuthState | None = None
+    last_scan_job_id: str | None = None
+
+
+repositories: Dict[str, RepositoryRecord] = {}
+repositories_lock = asyncio.Lock()
 
 
 # ---------------------------------------------------------------------------
@@ -216,6 +290,158 @@ async def _obtain_oauth_headers(
 
     logger.warning("OAuth flow completed without token for %s", server_url)
     return None
+
+
+async def _update_repo(repo_id: str, **fields: Any) -> None:
+    async with repositories_lock:
+        repo = repositories.get(repo_id)
+        if repo is None:
+            return
+        for key, value in fields.items():
+            setattr(repo, key, value)
+        repo.updated_at = datetime.now(timezone.utc)
+
+
+def _repo_to_response(repo: RepositoryRecord) -> "RepositoryResponse":
+    return RepositoryResponse(
+        id=repo.id,
+        name=repo.name,
+        serverUrl=repo.server_url,
+        scopes=repo.scopes,
+        status=repo.status,
+        authorizeUrl=repo.authorize_url,
+        lastError=repo.last_error,
+        securityLint=repo.security_lint,
+        providers=repo.providers,
+        artifacts=repo.artifacts,
+        createdAt=repo.created_at,
+        updatedAt=repo.updated_at,
+        lastScanJobId=repo.last_scan_job_id,
+    )
+
+
+async def _perform_repository_oauth(
+    repo: RepositoryRecord,
+    auth_state: RepositoryAuthState,
+) -> Dict[str, str] | None:
+    if auth_state.storage_dir is None:
+        auth_state.storage_dir = _job_storage_dir(repo.server_url)
+
+    oauth_cache = auth_state.storage_dir / "oauth"
+    oauth_cache.mkdir(parents=True, exist_ok=True)
+
+    auth = FastMCPOAuth(
+        mcp_url=repo.server_url,
+        scopes=repo.scopes,
+        client_name="mcptesting-backend",
+        token_storage_cache_dir=oauth_cache,
+        callback_port=None,
+    )
+
+    callback_url = f"{OAUTH_CALLBACK_BASE_URL}/api/oauth/callback/{repo.id}"
+    auth.redirect_port = None
+    auth.context.client_metadata.redirect_uris = [callback_url]  # type: ignore[assignment]
+
+    async def redirect_handler(url: str) -> None:
+        auth_state.authorize_url = url
+        auth_state.authorize_event.set()
+        await _update_repo(repo.id, status="awaiting_user", authorize_url=url)
+
+    async def callback_handler() -> tuple[str, str | None]:
+        loop = asyncio.get_running_loop()
+        auth_state.code_future = loop.create_future()
+        return await auth_state.code_future
+
+    auth.redirect_handler = redirect_handler  # type: ignore[assignment]
+    auth.callback_handler = callback_handler  # type: ignore[assignment]
+    auth_state.auth = auth
+
+    await auth._initialize()
+
+    tokens = getattr(auth.context, "current_tokens", None)
+    if tokens and tokens.access_token:
+        auth_state.authorize_event.set()
+        await _update_repo(repo.id, status="scanning", authorize_url=None)
+        return {"Authorization": f"Bearer {tokens.access_token}"}
+
+    headers: Dict[str, str] = {}
+    try:
+        async with httpx.AsyncClient(auth=auth, timeout=90.0) as client:
+            await client.get(repo.server_url, headers=headers)
+    except Exception as exc:  # noqa: BLE001
+        auth_state.authorize_event.set()
+        await _update_repo(repo.id, status="error", last_error=str(exc))
+        return None
+
+    tokens = getattr(auth.context, "current_tokens", None)
+    if tokens and tokens.access_token:
+        await _update_repo(repo.id, status="scanning", authorize_url=None)
+        auth_state.authorize_event.set()
+        return {"Authorization": f"Bearer {tokens.access_token}"}
+
+    auth_state.authorize_event.set()
+    await _update_repo(repo.id, status="error", last_error="OAuth flow did not return token")
+    return None
+
+
+async def _run_repository_flow(repo_id: str) -> None:
+    async with repositories_lock:
+        repo = repositories.get(repo_id)
+    if repo is None:
+        return
+
+    storage_dir = _job_storage_dir(repo.server_url)
+    auth_state = repo.auth_state or RepositoryAuthState()
+    if auth_state.storage_dir is None:
+        auth_state.storage_dir = storage_dir
+    repo.auth_state = auth_state
+
+    try:
+        await _update_repo(repo_id, status="authorizing", last_error=None, authorize_url=None)
+        headers = await _perform_repository_oauth(repo, auth_state)
+        if not headers:
+            return
+
+        request = ScanRequest(
+            server_url=repo.server_url,
+            headers=headers,
+            include=ScanInclude(mcpScan=True, mcpValidator=True),
+            timeout_seconds=SCAN_TIMEOUT_SECONDS,
+            oauth_scopes=repo.scopes,
+        )
+
+        job_id = uuid.uuid4().hex
+        job = ScanJob(job_id=job_id, request=request)
+
+        async with jobs_lock:
+            jobs[job_id] = job
+
+        try:
+            await _run_scan_job(job_id)
+        finally:
+            async with jobs_lock:
+                jobs.pop(job_id, None)
+
+        if job.status == "succeeded" and job.result:
+            artifacts_copy = dict(job.artifacts)
+            await _update_repo(
+                repo_id,
+                status="ready",
+                security_lint=job.result.get("securityLint"),
+                providers=job.result.get("providers"),
+                artifacts=artifacts_copy,
+                last_error=None,
+                last_scan_job_id=job_id,
+            )
+        else:
+            await _update_repo(
+                repo_id,
+                status="error",
+                last_error=job.error or "Scan failed",
+            )
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Repository flow failed for %s", repo_id)
+        await _update_repo(repo_id, status="error", last_error=str(exc))
 
 
 def _job_storage_dir(server_url: str) -> Path:
@@ -1098,3 +1324,95 @@ async def delete_scan_job(job_id: str) -> JSONResponse:
         raise HTTPException(status_code=404, detail="Job not found")
 
     return JSONResponse(status_code=204, content=None)
+
+
+@app.post("/api/repos", response_model=RepositoryResponse)
+async def create_repository(payload: RepositoryCreateRequest) -> RepositoryResponse:
+    repo_id = uuid.uuid4().hex
+    now = datetime.now(timezone.utc)
+    repo = RepositoryRecord(
+        id=repo_id,
+        name=payload.name,
+        server_url=payload.serverUrl,
+        scopes=payload.scopes,
+        status="creating",
+        created_at=now,
+        updated_at=now,
+        authorize_url=None,
+        last_error=None,
+        security_lint=None,
+        providers=None,
+        artifacts=None,
+        auth_state=RepositoryAuthState(),
+        last_scan_job_id=None,
+    )
+
+    async with repositories_lock:
+        repositories[repo_id] = repo
+
+    asyncio.create_task(_run_repository_flow(repo_id))
+
+    auth_state = repo.auth_state
+    if auth_state is not None:
+        try:
+            await asyncio.wait_for(auth_state.authorize_event.wait(), timeout=15.0)
+        except asyncio.TimeoutError:
+            pass
+
+    async with repositories_lock:
+        repo_snapshot = repositories.get(repo_id)
+
+    if repo_snapshot is None:
+        raise HTTPException(status_code=404, detail="Repository not found")
+
+    return _repo_to_response(repo_snapshot)
+
+
+@app.get("/api/repos", response_model=List[RepositoryResponse])
+async def list_repositories() -> List[RepositoryResponse]:
+    async with repositories_lock:
+        return [_repo_to_response(repo) for repo in repositories.values()]
+
+
+@app.get("/api/repos/{repo_id}", response_model=RepositoryResponse)
+async def get_repository(repo_id: str) -> RepositoryResponse:
+    async with repositories_lock:
+        repo = repositories.get(repo_id)
+    if repo is None:
+        raise HTTPException(status_code=404, detail="Repository not found")
+    return _repo_to_response(repo)
+
+
+@app.get("/api/oauth/callback/{repo_id}")
+async def oauth_callback(
+    repo_id: str,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    error_description: str | None = None,
+) -> HTMLResponse:
+    async with repositories_lock:
+        repo = repositories.get(repo_id)
+    if repo is None or repo.auth_state is None:
+        raise HTTPException(status_code=404, detail="Repository not awaiting authorization")
+
+    auth_state = repo.auth_state
+
+    if error:
+        if auth_state.code_future and not auth_state.code_future.done():
+            auth_state.code_future.set_exception(RuntimeError(f"{error}: {error_description or ''}"))
+        await _update_repo(repo_id, status="error", last_error=f"OAuth error: {error}")
+        return HTMLResponse("OAuth error. You can close this window.", status_code=400)
+
+    if not code:
+        return HTMLResponse("Missing authorization code.", status_code=400)
+
+    loop = asyncio.get_running_loop()
+    if auth_state.code_future is None or auth_state.code_future.done():
+        auth_state.code_future = loop.create_future()
+
+    if not auth_state.code_future.done():
+        auth_state.code_future.set_result((code, state))
+
+    await _update_repo(repo_id, status="authorizing", authorize_url=None)
+    return HTMLResponse("Authentication complete. You can close this window.")
