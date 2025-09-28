@@ -3,6 +3,7 @@ import { SecurityLint, ServerMeta, EvaluationRun } from '../../types'
 import { ScoreDisplay } from './score-display'
 import { CategoryBreakdown } from './category-breakdown'
 import { ChecksTable } from './checks-table'
+import type { SecurityCheckSummary } from '@/app/types/security'
 
 interface SecurityDashboardProps {
   server: ServerMeta
@@ -48,7 +49,7 @@ export const SecurityDashboard: React.FC<SecurityDashboardProps> = ({
         score={securityLint.score}
         passedChecks={securityLint.passedChecks}
         totalChecks={securityLint.totalChecks}
-        securityChecks={Object.values(securityLint.checks).map(check => ({
+        securityChecks={Object.values(securityLint.checks).map<SecurityCheckSummary>(check => ({
           name: check.name,
           status: check.satisfied ? 'passed' : 'failed',
           severity: check.severity,

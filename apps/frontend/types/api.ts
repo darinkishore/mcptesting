@@ -1,9 +1,9 @@
-import type { ProvidersMeta } from './core';
-import type { SecurityLint } from './security';
+import type { ProvidersMeta } from '../app/types/core';
+import type { SecurityLint } from '../app/types/security';
 
 // API Response Types
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data: T | null;
   error: string | null;
@@ -68,7 +68,7 @@ export interface PaginatedResponse<T> {
 export interface ApiError {
   message: string;
   code?: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 // API Configuration
@@ -79,6 +79,7 @@ export const API_ENDPOINTS = {
   health: '/',
   hello: '/api/hello',
   users: '/api/users',
+  repositories: '/api/repositories',
   securityScans: '/api/security/scans',
 } as const;
 
@@ -94,6 +95,7 @@ export interface SecurityScanRequest {
   headers?: Record<string, string>;
   protocolVersion?: string;
   include?: SecurityScanInclude;
+  oauthScopes?: string;
 }
 
 export type ScanJobStatusValue = 'pending' | 'running' | 'succeeded' | 'error';
@@ -117,6 +119,23 @@ export interface SecurityScanJobStatus {
   finishedAt?: string | null;
   result?: SecurityScanJobResult;
   error?: string | null;
+}
+
+// Repository Types
+
+export interface Repository {
+  id: string;
+  name: string;
+  serverUrl: string;
+  status: 'ready' | 'error' | 'pending' | string;
+  createdAt: string;
+  updatedAt: string;
+  securityLint?: SecurityLint | null;
+  providers?: ProvidersMeta | null;
+  totalScore?: number | null;
+  toolScore?: number | null;
+  securityScore?: number | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 // Helper function for API calls

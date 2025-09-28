@@ -89,16 +89,14 @@ The description should be 1-2 sentences, professional tone, and focus on the sec
         throw new Error(data.error)
       }
 
-      return data.result || this.getFallbackDescription(score, passedChecks, totalChecks)
+      return data.result || this.getFallbackDescription(score)
     } catch (error) {
       console.error('Swarms API error:', error)
-      return this.getFallbackDescription(score, passedChecks, totalChecks)
+      return this.getFallbackDescription(score)
     }
   }
 
-  private getFallbackDescription(score: number, passedChecks: number, totalChecks: number): string {
-    const failedChecks = totalChecks - passedChecks
-
+  private getFallbackDescription(score: number): string {
     if (score >= 90) {
       return "Excellent security posture with robust compliance across all critical security domains."
     } else if (score >= 70) {

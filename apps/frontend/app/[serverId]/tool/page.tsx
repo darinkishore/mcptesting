@@ -1,4 +1,3 @@
-import { MCPServer } from '../../mcp-types';
 import { ToolScore } from './tool-score';
 import { ToolScoreDisplay } from './tool-score-display';
 import { dataLoader } from '../../../lib/data-loader';

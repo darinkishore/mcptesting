@@ -2,11 +2,17 @@
 
 import React, { useState, useEffect } from 'react'
 
+import type { SecurityCheckSummary } from '@/app/types/security'
+
 interface SecurityDescriptionProps {
   score: number
   passedChecks: number
   totalChecks: number
-  securityChecks?: Array<{ name: string; status: string; severity: string; category?: string }>
+  securityChecks?: SecurityCheckSummary[]
+}
+
+interface SecurityDescriptionResponse {
+  description?: string
 }
 
 export const SecurityDescription: React.FC<SecurityDescriptionProps> = ({
@@ -35,8 +41,8 @@ export const SecurityDescription: React.FC<SecurityDescriptionProps> = ({
           })
         })
 
-        const data = await response.json()
-        setDescription(data.description)
+        const data: SecurityDescriptionResponse = await response.json()
+        setDescription(data.description ?? '')
       } catch (error) {
         console.error('Failed to fetch security description:', error)
         // Fallback description
@@ -49,19 +55,25 @@ export const SecurityDescription: React.FC<SecurityDescriptionProps> = ({
     fetchDescription()
   }, [score, passedChecks, totalChecks, securityChecks])
 
-  const getFallbackDescription = (score: number, securityChecks?: any[]): string => {
+  const getFallbackDescription = (score: number, securityChecks?: SecurityCheckSummary[]): string => {
     // Analyze security checks for more contextual fallback
     if (securityChecks && securityChecks.length > 0) {
       const criticalFailures = securityChecks.filter(c => c.status === 'failed' && c.severity === 'critical')
-      const categories = [...new Set(securityChecks.map(c => c.category))]
+      const categories = [...new Set(
+        securityChecks
+          .map(c => c.category)
+          .filter((category): category is string => Boolean(category))
+      )]
 
-      if (criticalFailures.length > 0) {
+      if (criticalFailures.length > 0 && categories.length > 0) {
         return `Critical security vulnerabilities identified in ${categories.join(', ')} requiring immediate remediation to ensure MCP server integrity.`
       }
 
-      if (score >= 90) {
+      if (score >= 90 && categories.length > 0) {
         return `Strong security implementation across ${categories.join(', ')} domains with comprehensive protection measures in place.`
-      } else if (score >= 70) {
+      }
+
+      if (score >= 70 && categories.length > 0) {
         return `Solid security foundation with room for enhancement in specific areas to achieve optimal protection levels.`
       }
     }
