@@ -90,6 +90,14 @@ The backend can launch full MCP security scans and HTTP compliance checks via `/
      ```
    - You can request custom scopes by supplying `oauthScopes` when creating a scan job (defaults to `offline_access`).
 
+6. **Bootstrap helper script (macOS friendly)**
+
+   From the repo root, run:
+   ```bash
+   ./scripts/setup_mcp_env.sh
+   ```
+   This script clones both `mcp-scan` and `mcp-validator` next to the repo, creates a writable cache directory (`~/Library/Application Support/mcptesting/mcp-scan`), and writes a `.env` file with the correct environment variables. When it finishes, load them into your shell with `source .env`.
+
 ## Helpful Scripts
 
 - `scripts/test_security_scan.py` – run MCP Scan + Validator end-to-end against a given MCP HTTP endpoint with verbose logging.
