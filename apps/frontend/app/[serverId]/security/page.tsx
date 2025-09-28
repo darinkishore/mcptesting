@@ -1,10 +1,6 @@
-import { SecurityDashboard } from './security-dashboard'
-import { securityData } from './mock-security-data'
-import {
-  hydrateSecurityData,
-  hydrateServerMeta,
-  hydrateEvaluationRun
-} from './mock-adapter'
+import { notFound } from 'next/navigation'
+import { SecurityScanClient } from './security-scan-client'
+import { getSecurityServerConfig } from './server-registry'
 
 interface SecurityPageProps {
   params: Promise<{ serverId: string }>;
@@ -12,21 +8,15 @@ interface SecurityPageProps {
 
 export default async function SecurityAnalysisPage({ params }: SecurityPageProps) {
   const { serverId } = await params;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _serverId = serverId; // Will be used when implementing real API
+  const config = getSecurityServerConfig(serverId);
 
-  // Transform mock data to use comprehensive types
-  const server = hydrateServerMeta(securityData)
-  const run = hydrateEvaluationRun(securityData)
-  const securityLint = hydrateSecurityData(securityData)
+  if (!config) {
+    notFound();
+  }
 
   return (
     <div className="min-h-screen">
-      <SecurityDashboard
-        server={server}
-        run={run}
-        securityLint={securityLint}
-      />
+      <SecurityScanClient serverId={serverId} config={config} />
     </div>
   );
 }
