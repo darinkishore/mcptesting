@@ -6,7 +6,6 @@ import { dataLoader } from '../lib/data-loader';
 async function getServers(): Promise<MCPServer[]> {
   try {
     const servers = await dataLoader.getAllServers();
-    console.log(servers,"servers")
     return servers;
   } catch (error) {
     console.error('Error loading servers:', error);
