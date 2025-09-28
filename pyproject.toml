@@ -4,7 +4,11 @@ version = "0.1.0"
 description = "Python and Next.js monorepo"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "fastmcp>=2.12.4",
+    "mcp[cli]>=1.15.0",
+    "requests>=2.32.5",
+]
 
 [tool.uv]
 dev-dependencies = [

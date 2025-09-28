@@ -1,3 +1,6 @@
+import type { ProvidersMeta } from './core';
+import type { SecurityLint } from './security';
+
 // API Response Types
 
 export interface ApiResponse<T = any> {
@@ -76,7 +79,45 @@ export const API_ENDPOINTS = {
   health: '/',
   hello: '/api/hello',
   users: '/api/users',
+  securityScans: '/api/security/scans',
 } as const;
+
+// Security Scan API
+
+export interface SecurityScanInclude {
+  mcpScan?: boolean;
+  mcpValidator?: boolean;
+}
+
+export interface SecurityScanRequest {
+  serverUrl: string;
+  headers?: Record<string, string>;
+  protocolVersion?: string;
+  include?: SecurityScanInclude;
+}
+
+export type ScanJobStatusValue = 'pending' | 'running' | 'succeeded' | 'error';
+
+export interface SecurityScanJobCreated {
+  jobId: string;
+  status: ScanJobStatusValue;
+}
+
+export interface SecurityScanJobResult {
+  providers: ProvidersMeta;
+  securityLint: SecurityLint;
+  rawArtifacts?: Record<string, string>;
+}
+
+export interface SecurityScanJobStatus {
+  jobId: string;
+  status: ScanJobStatusValue;
+  createdAt: string;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+  result?: SecurityScanJobResult;
+  error?: string | null;
+}
 
 // Helper function for API calls
 
